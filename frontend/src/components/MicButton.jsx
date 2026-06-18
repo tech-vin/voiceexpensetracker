@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 
-export default function MicButton({ onTranscript, onNoResult, disabled }) {
+export default function MicButton({ onTranscript, onNoResult, onInterim, disabled }) {
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef(null)
   const gotResultRef = useRef(false)
@@ -20,17 +20,22 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
     }
 
     const recognition = new SpeechRecognition()
-    recognition.lang = 'en-IN'
+    recognition.lang = 'en-US'
     recognition.continuous = false
-    recognition.interimResults = false
+    recognition.interimResults = true
     recognition.maxAlternatives = 1
     gotResultRef.current = false
 
     recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript.trim()
-      if (text) {
-        gotResultRef.current = true
-        onTranscript(text)
+      const result = event.results[event.results.length - 1]
+      const text = result[0].transcript.trim()
+      if (result.isFinal) {
+        if (text) {
+          gotResultRef.current = true
+          onTranscript(text)
+        }
+      } else {
+        onInterim?.(text)
       }
     }
 

@@ -17,6 +17,7 @@ export default function App() {
   const [summary, setSummary] = useState({ total: 0, count: 0 })
   const [status, setStatus] = useState(STATUS.IDLE)
   const [lastTranscript, setLastTranscript] = useState('')
+  const [interimText, setInterimText] = useState('')
   const [lastExpense, setLastExpense] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -39,6 +40,7 @@ export default function App() {
 
   const handleTranscript = useCallback(async (text) => {
     setLastTranscript(text)
+    setInterimText('')
     setStatus(STATUS.PROCESSING)
     setLastExpense(null)
 
@@ -68,6 +70,7 @@ export default function App() {
   }, [fetchAll])
 
   const handleNoResult = useCallback(() => {
+    setInterimText('')
     setErrorMsg("Didn't catch that — try speaking more clearly.")
     setStatus(STATUS.ERROR)
     setTimeout(() => setStatus(STATUS.IDLE), 3000)
@@ -95,11 +98,19 @@ export default function App() {
           <MicButton
             onTranscript={handleTranscript}
             onNoResult={handleNoResult}
+            onInterim={setInterimText}
             disabled={status === STATUS.PROCESSING}
           />
 
+          {/* Live interim text while listening */}
+          {interimText && status === STATUS.IDLE && (
+            <p className="mt-4 text-sm text-indigo-500 italic text-center max-w-xs animate-pulse">
+              {interimText}…
+            </p>
+          )}
+
           {/* Status feedback */}
-          <div className="mt-14 min-h-[64px] flex flex-col items-center justify-center gap-1">
+          <div className="mt-4 min-h-[64px] flex flex-col items-center justify-center gap-1">
             {status === STATUS.PROCESSING && (
               <>
                 <div className="flex items-center gap-2 text-amber-500">

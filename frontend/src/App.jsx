@@ -26,10 +26,10 @@ export default function App() {
         fetch(`${API}/expenses`),
         fetch(`${API}/summary`),
       ])
-      setExpenses(await expRes.json())
-      setSummary(await sumRes.json())
+      if (expRes.ok) setExpenses(await expRes.json())
+      if (sumRes.ok) setSummary(await sumRes.json())
     } catch {
-      /* backend not yet started — silent fail */
+      /* network error — backend not reachable */
     }
   }, [])
 

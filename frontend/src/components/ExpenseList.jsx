@@ -25,7 +25,8 @@ function formatTime(iso) {
 }
 
 export default function ExpenseList({ expenses, onDelete }) {
-  if (expenses.length === 0) {
+  const list = Array.isArray(expenses) ? expenses : []
+  if (list.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
         <div className="text-5xl mb-3">🎙</div>
@@ -41,7 +42,7 @@ export default function ExpenseList({ expenses, onDelete }) {
         Recent Expenses
       </h2>
       <ul className="space-y-2">
-        {expenses.map((expense) => {
+        {list.map((expense) => {
           const catStyle = CATEGORY_STYLES[expense.category] ?? CATEGORY_STYLES.Other
           const catEmoji = CATEGORY_EMOJI[expense.category] ?? '📌'
           return (

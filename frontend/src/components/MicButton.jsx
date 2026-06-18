@@ -5,6 +5,13 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
   const recognitionRef = useRef(null)
   const gotResultRef = useRef(false)
 
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      recognitionRef.current = null
+    }
+  }, [])
+
   const startListening = useCallback(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
@@ -28,7 +35,6 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
     }
 
     recognition.onerror = (event) => {
-      // 'no-speech' and 'aborted' are expected — handled in onend
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
         console.error('Speech recognition error:', event.error)
       }
@@ -36,6 +42,7 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
 
     recognition.onend = () => {
       setIsListening(false)
+      recognitionRef.current = null
       if (!gotResultRef.current) {
         onNoResult?.()
       }
@@ -46,27 +53,18 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
     setIsListening(true)
   }, [onTranscript, onNoResult])
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-      recognitionRef.current = null
+  const handleClick = useCallback(() => {
+    if (disabled) return
+    if (isListening) {
+      stopListening()
+    } else {
+      startListening()
     }
-  }, [])
-
-  const handlePointerDown = useCallback((e) => {
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    if (!disabled) startListening()
-  }, [disabled, startListening])
-
-  const handlePointerUp = useCallback((e) => {
-    e.preventDefault()
-    stopListening()
-  }, [stopListening])
+  }, [disabled, isListening, startListening, stopListening])
 
   return (
     <div className="relative flex items-center justify-center">
-      {/* Ripple rings when listening */}
+      {/* Ripple rings while listening */}
       {isListening && (
         <>
           <span className="absolute w-28 h-28 rounded-full bg-red-400 animate-ripple" />
@@ -75,21 +73,18 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
       )}
 
       <button
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onClick={handleClick}
         disabled={disabled}
-        style={{ touchAction: 'none', userSelect: 'none' }}
         className={[
           'relative z-10 w-28 h-28 rounded-full flex items-center justify-center',
-          'transition-all duration-150 shadow-lg focus:outline-none',
+          'transition-all duration-150 shadow-lg focus:outline-none select-none',
           isListening
             ? 'bg-red-500 scale-110 shadow-red-300'
             : disabled
               ? 'bg-gray-300 cursor-not-allowed'
               : 'bg-indigo-600 hover:bg-indigo-500 active:scale-95 cursor-pointer shadow-indigo-200',
         ].join(' ')}
-        aria-label={isListening ? 'Recording… release to stop' : 'Hold to record'}
+        aria-label={isListening ? 'Tap to stop' : 'Tap to speak'}
       >
         {isListening ? (
           /* Waveform bars */
@@ -112,7 +107,7 @@ export default function MicButton({ onTranscript, onNoResult, disabled }) {
       </button>
 
       <p className="absolute -bottom-8 text-xs text-gray-400 whitespace-nowrap">
-        {isListening ? 'Release to send' : 'Press & hold to speak'}
+        {isListening ? 'Tap to stop · speak now' : 'Tap to speak'}
       </p>
     </div>
   )

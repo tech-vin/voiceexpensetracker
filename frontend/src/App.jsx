@@ -20,6 +20,8 @@ export default function App() {
   const [interimText, setInterimText] = useState('')
   const [lastExpense, setLastExpense] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [serverReady, setServerReady] = useState(false)
+  const [connecting, setConnecting] = useState(true)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -30,12 +32,33 @@ export default function App() {
       if (expRes.ok) setExpenses(await expRes.json())
       if (sumRes.ok) setSummary(await sumRes.json())
     } catch {
-      /* network error — backend not reachable */
+      /* network error */
     }
   }, [])
 
+  // Ping backend until it wakes up, then load data
   useEffect(() => {
-    fetchAll()
+    let cancelled = false
+    const wake = async () => {
+      for (let attempt = 0; attempt < 20; attempt++) {
+        try {
+          const res = await fetch(`${API}/`)
+          if (res.ok) {
+            if (!cancelled) {
+              setServerReady(true)
+              setConnecting(false)
+              fetchAll()
+            }
+            return
+          }
+        } catch {}
+        if (cancelled) return
+        await new Promise(r => setTimeout(r, 3000))
+      }
+      if (!cancelled) setConnecting(false) // gave up after ~60s
+    }
+    wake()
+    return () => { cancelled = true }
   }, [fetchAll])
 
   const handleTranscript = useCallback(async (text) => {
@@ -83,6 +106,19 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Connecting banner */}
+      {connecting && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2">
+          <svg className="animate-spin w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          <span className="text-xs text-amber-700 font-medium">
+            Server is waking up — this takes ~30 seconds on first load…
+          </span>
+        </div>
+      )}
+
       <div className="max-w-md mx-auto px-4 pt-6">
 
         {/* Header */}
@@ -99,7 +135,7 @@ export default function App() {
             onTranscript={handleTranscript}
             onNoResult={handleNoResult}
             onInterim={setInterimText}
-            disabled={status === STATUS.PROCESSING}
+            disabled={status === STATUS.PROCESSING || connecting}
           />
 
           {/* Live interim text while listening */}

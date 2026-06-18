@@ -3,7 +3,7 @@ import MicButton from './components/MicButton'
 import ExpenseList from './components/ExpenseList'
 import Summary from './components/Summary'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || 'https://voiceexpensetracker-7vs3.onrender.com'
 
 const STATUS = {
   IDLE: 'idle',
@@ -114,7 +114,7 @@ export default function App() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
           </svg>
           <span className="text-xs text-amber-700 font-medium">
-            Server is waking up — this takes ~30 seconds on first load…
+            Server waking up… <span className="opacity-60 font-normal">{API}</span>
           </span>
         </div>
       )}

@@ -20,6 +20,11 @@ app.add_middleware(
 database.Base.metadata.create_all(bind=database.engine)
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Voice Expense Tracker API"}
+
+
 class TranscriptRequest(BaseModel):
     transcript: str
 
